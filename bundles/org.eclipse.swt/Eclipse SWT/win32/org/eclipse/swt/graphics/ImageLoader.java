@@ -14,11 +14,25 @@
 package org.eclipse.swt.graphics;
 
 
+import static java.awt.RenderingHints.*;
+import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
+
+import java.awt.*;
+import java.awt.geom.*;
+import java.awt.image.*;
 import java.io.*;
 import java.util.*;
+import java.util.List;
+
+import javax.imageio.*;
 
 import org.eclipse.swt.*;
+import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.image.*;
+
+import com.github.weisj.jsvg.*;
+import com.github.weisj.jsvg.geometry.size.*;
+import com.github.weisj.jsvg.parser.*;
 
 /**
  * Instances of this class are used to load images from,
@@ -155,6 +169,13 @@ public ImageData[] load(InputStream stream) {
 	return data;
 }
 
+private final static Map<Object, Object> RENDERING_HINTS = Map.of(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON,
+		KEY_ALPHA_INTERPOLATION, VALUE_ALPHA_INTERPOLATION_QUALITY, KEY_COLOR_RENDERING,
+		VALUE_COLOR_RENDER_QUALITY, KEY_DITHERING, VALUE_DITHER_DISABLE, KEY_FRACTIONALMETRICS,
+		VALUE_FRACTIONALMETRICS_ON, KEY_INTERPOLATION, VALUE_INTERPOLATION_BICUBIC, KEY_RENDERING,
+		VALUE_RENDER_QUALITY, KEY_STROKE_CONTROL, VALUE_STROKE_PURE, KEY_TEXT_ANTIALIASING,
+		VALUE_TEXT_ANTIALIAS_ON);
+
 /**
  * Loads an array of <code>ImageData</code> objects from the
  * file with the specified name. Throws an error if either
@@ -175,11 +196,75 @@ public ImageData[] load(InputStream stream) {
  */
 public ImageData[] load(String filename) {
 	if (filename == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-	try (InputStream stream = new FileInputStream(filename)) {
-		return load(stream);
+	String localSVGPath = "";
+	if(filename.contains("eclipse.platform.ui\\bundles")) {
+		localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.platform.ui\\bundles", "Bachelor\\IconStore\\original-svg");
+	} else if (filename.contains("eclipse.jdt.ui")) {
+		localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.jdt.ui", "Bachelor\\IconStore\\original-svg");
+	} else if (filename.contains("eclipse.platform\\debug")) {
+		localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.platform\\debug", "Bachelor\\IconStore\\original-svg");
+	} else if (filename.contains("eclipse.jdt.debug")) {
+		localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.jdt.debug", "Bachelor\\IconStore\\original-svg");
+	} else if (filename.contains("eclipse.platform\\ua")) {
+		localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.platform\\ua", "Bachelor\\IconStore\\original-svg");
+	} else if (filename.contains("eclipse.platform\\platform")) {
+		localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.platform\\platform", "Bachelor\\IconStore\\original-svg");
+	} else {
+		localSVGPath = filename.replace("SWT-JDT-Platform\\git\\", "Bachelor\\IconStore\\original-svg");
+	}
+	localSVGPath = localSVGPath.replace("@2x", "").replace(".png", ".svg");
+	try {
+		if(localSVGPath.endsWith(".svg") && !(
+				localSVGPath.contains("dtool") ||
+				localSVGPath.contains("dlcl") ||
+				localSVGPath.contains("dview"))) {
+			int zoom = DPIUtil.getNativeDeviceZoom();
+			SVGLoader loader = new SVGLoader();
+			File svgFile = new File(localSVGPath);
+			SVGDocument svgDocument = null;
+			if(svgFile.exists()) {
+				svgDocument = loader.load(svgFile.toURI().toURL());
+			}
+			if(svgDocument != null) {
+				FloatSize size = svgDocument.size();
+		        double originalWidth = size.getWidth();
+		        double originalHeight = size.getHeight();
+				double scalingFactor = zoom / 100.0;
+				int newWidth = (int) (originalWidth * scalingFactor);
+				int newHeight = (int) (originalHeight * scalingFactor);
+
+				BufferedImage image = new BufferedImage(newWidth, newHeight, TYPE_INT_ARGB);
+				Graphics2D g = image.createGraphics();
+				g.setRenderingHints(RENDERING_HINTS);
+
+				AffineTransform transform = AffineTransform.getScaleInstance(scalingFactor, scalingFactor);
+				g.setTransform(transform);
+
+				svgDocument.render(null, g);
+				g.dispose();
+				String outputFilePath = "D:\\dev\\oomph\\Bachelor\\IconStore\\test-png\\" + localSVGPath.substring(localSVGPath.lastIndexOf("\\"));
+				outputFilePath = outputFilePath.replace(".svg", ".png");
+				File testOutputFile = new File(outputFilePath);
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				ImageIO.write(image, "png", baos); //$NON-NLS-1$
+				ImageIO.write(image, "png", testOutputFile);
+				try (InputStream in = new ByteArrayInputStream(baos.toByteArray())) {
+					return load(in);
+				}
+			}
+		}
+		try (InputStream stream = new FileInputStream(filename)) {
+			if(!(localSVGPath.contains("dtool") ||
+					localSVGPath.contains("dlcl") ||
+					localSVGPath.contains("dview"))) {
+				System.out.println(filename);
+			}
+			return load(stream);
+		}
 	} catch (IOException e) {
 		SWT.error(SWT.ERROR_IO, e);
 	}
+
 	return null;
 }
 

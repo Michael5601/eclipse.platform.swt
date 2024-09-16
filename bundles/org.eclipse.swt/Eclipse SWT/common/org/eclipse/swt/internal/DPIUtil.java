@@ -340,8 +340,12 @@ public static Rectangle scaleBounds (Rectangle rect, int targetZoom, int current
  */
 public static ImageData autoScaleImageData (Device device, final ImageData imageData, int imageDataZoomFactor) {
 	if (deviceZoom == imageDataZoomFactor || imageData == null || (device != null && !device.isAutoScalable())) return imageData;
-	float scaleFactor = (float) deviceZoom / imageDataZoomFactor;
-	return autoScaleImageData(device, imageData, scaleFactor);
+	if(imageData.width == 32) {
+		float scaleFactor = (float) deviceZoom / imageDataZoomFactor;
+		return autoScaleImageData(device, imageData, scaleFactor);
+	} else {
+		return imageData;
+	}
 }
 
 /**
