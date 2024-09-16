@@ -542,8 +542,15 @@ public Image (Device device, String filename) {
 	super(device);
 	if (filename == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	initialNativeZoom = DPIUtil.getNativeDeviceZoom();
-	this.dataAtBaseZoom = new ElementAtZoom<>(new ImageData (filename), 100);
-	ImageData data = DPIUtil.autoScaleUp(device, this.dataAtBaseZoom);
+	ImageData data = null;
+	//TODO bessere Lösung finden
+	if(filename.endsWith(".svg")) {
+		this.dataAtBaseZoom = new ElementAtZoom<>(new ImageData (filename), 100);
+		data = new ElementAtZoom<>(new ImageData (filename), 125).element();
+	} else {
+		this.dataAtBaseZoom = new ElementAtZoom<>(new ImageData (filename), 100);
+		data = DPIUtil.autoScaleUp(device, this.dataAtBaseZoom);
+	}
 	init(data, getZoom());
 	init();
 	this.device.registerResourceWithZoomSupport(this);
@@ -583,6 +590,17 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
 	this.imageFileNameProvider = imageFileNameProvider;
 	initialNativeZoom = DPIUtil.getNativeDeviceZoom();
 	ElementAtZoom<String> fileName = DPIUtil.validateAndGetImagePathAtZoom (imageFileNameProvider, getZoom());
+	String svgFileName = fileName.element().replace(".png", ".svg").replace("@2x", "");
+	try {
+		if (svgFileName.endsWith(".svg")) {
+			init(new ImageData (svgFileName), getZoom());
+			init();
+			this.device.registerResourceWithZoomSupport(this);
+			return;
+		}
+	} catch (SWTException e) {
+		//try standard method
+	}
 	if (fileName.zoom() == getZoom()) {
 		long handle = initNative (fileName.element(), getZoom());
 		if (handle == 0) {
@@ -627,6 +645,7 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
  * </ul>
  * @since 3.104
  */
+//TODO SVG-Case einführen
 public Image(Device device, ImageDataProvider imageDataProvider) {
 	super(device);
 	this.imageDataProvider = imageDataProvider;
@@ -798,6 +817,7 @@ private ImageData applyGrayImageData(ImageData data, int pHeight, int pWidth) {
  *
  * @noreference This method is not intended to be referenced by clients.
  */
+//TODO Scaling muss für SVG deaktiviert werden.
 public static Long win32_getHandle (Image image, int zoom) {
 	if(image.isDisposed()) {
 		return image.handle;
@@ -1441,6 +1461,7 @@ public ImageData getImageData() {
  *
  * @since 3.106
  */
+//TODO SVG-Case einführen. Möglicherweise zoomed scaleImageData nicht, wenn ImageData schon richtig ist, aber es kommt auf den eingegebenen Zoom an.
 public ImageData getImageData (int zoom) {
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	int currentZoom = getZoom();
