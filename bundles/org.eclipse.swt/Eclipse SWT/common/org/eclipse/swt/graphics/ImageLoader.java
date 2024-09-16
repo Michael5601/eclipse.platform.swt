@@ -18,7 +18,6 @@ import java.io.*;
 import java.util.*;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.image.*;
 
 /**

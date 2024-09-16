@@ -364,9 +364,8 @@ public Image(Device device, ImageData data) {
 	super(device);
 	if (data == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	initialNativeZoom = DPIUtil.getNativeDeviceZoom();
-	int deviceZoom = getZoom();
-	data = DPIUtil.scaleImageData(device, new ElementAtZoom<>(data, 100), deviceZoom);
-	init(data, deviceZoom);
+	data = DPIUtil.autoScaleImageData(device, data, 100);
+	init(data, getZoom());
 	init();
 	this.device.registerResourceWithZoomSupport(this);
 }

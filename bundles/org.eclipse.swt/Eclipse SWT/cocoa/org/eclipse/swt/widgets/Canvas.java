@@ -183,7 +183,7 @@ void drawWidget (long id, NSGraphicsContext context, NSRect rect) {
 		if (image != null) {
 			NSImage imageHandle = image.handle;
 			NSSize size = imageHandle.size();
-			NSImageRep imageRep = ImageUtil.createImageRep(image, size);
+			NSImageRep imageRep = ImageUtil.createImageRep(image, (int) size.width, (int) size.height);
 			if (!imageRep.isKindOfClass(OS.class_NSBitmapImageRep)) return;
 			NSBitmapImageRep rep = new NSBitmapImageRep(imageRep);
 			CGRect destRect = new CGRect ();

@@ -359,10 +359,8 @@ public ImageData(InputStream stream) {
  * code is still responsible for closing the input stream.
  *
  * @param stream the input stream to load the image from (must not be null)
- * @param zoom the zoom factor to apply when rasterizing an SVG.
- *
- * A value of 0 means that the standard method for loading should be used.
- * This case is equivalent to calling {@link ImageLoader#load(InputStream)}.
+ * @param fileZoom the zoom of the file from which the <code>ImageData</code> is loaded
+ * @param targetZoom the zoom for the returned <code>ImageData</code> (must be grater than 0)
  *
  * A value above 0 specifies a scaling factor for the output image. For example:
  * <ul>
@@ -382,12 +380,10 @@ public ImageData(InputStream stream) {
  * </ul>
  *
  * @see ImageLoader#load(InputStream)
- * @since 3.130
+ * @since 3.129
  */
-public ImageData(InputStream stream, int zoom) {
-	ImageData[] data = ImageDataLoader.load(stream, zoom);
-	if (data.length < 1) SWT.error(SWT.ERROR_INVALID_IMAGE);
-	ImageData i = data[0];
+public ImageData(InputStream stream, int fileZoom, int targetZoom) {
+	ImageData i = ImageDataLoader.load(stream, fileZoom, targetZoom).element();
 	setAllFields(
 		i.width,
 		i.height,
@@ -458,9 +454,8 @@ public ImageData(String filename) {
  * image, or if the image has an unsupported type.
  *
  * @param filename the name of the file to load the image from (must not be null)
- * @param zoom the zoom factor to apply when rasterizing a SVG.
- * A value of 0 means that the standard method for loading should be used.
- * This case is equivalent to calling {@link ImageLoader#load(String)}.
+ * @param fileZoom the zoom of the file from which the <code>ImageData</code> is loaded
+ * @param targetZoom the zoom for the returned <code>ImageData</code> (must be grater than 0)
  *
  * A value above 0 specifies a scaling factor for the output image. For example:
  * <ul>
@@ -479,12 +474,10 @@ public ImageData(String filename) {
  *    <li>ERROR_UNSUPPORTED_FORMAT - if the image file contains an unrecognized format</li>
  * </ul>
  *
- * @since 3.130
+ * @since 3.129
  */
-public ImageData(String filename, int zoom) {
-	ImageData[] data = ImageDataLoader.load(filename, zoom);
-	if (data.length < 1) SWT.error(SWT.ERROR_INVALID_IMAGE);
-	ImageData i = data[0];
+public ImageData(String filename, int fileZoom, int targetZoom) {
+	ImageData i = ImageDataLoader.load(filename, fileZoom, targetZoom).element();
 	setAllFields(
 		i.width,
 		i.height,

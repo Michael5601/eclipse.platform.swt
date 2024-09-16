@@ -28,6 +28,7 @@
 
   <properties>
     <tycho.scmUrl>scm:git:https://github.com/eclipse-platform/eclipse.platform.swt.git</tycho.scmUrl>
+    <tycho.version>4.0.13-SNAPSHOT</tycho.version>
     <os-jvm-flags></os-jvm-flags>
 
     <!-- for sonarcloud: -->
@@ -232,6 +233,7 @@
     <module>examples/org.eclipse.swt.examples.ole.win32</module>
     <module>examples/org.eclipse.swt.examples.views</module>
     <module>tests/org.eclipse.swt.tests</module>
+    <module>tests/org.eclipse.swt.svg.tests</module>
     <module>features/org.eclipse.swt.tools.feature</module>
   </modules>
 </project>

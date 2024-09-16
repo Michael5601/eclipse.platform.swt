@@ -48,5 +48,4 @@ class ImageDataLoader {
 		if (data.isEmpty()) SWT.error(SWT.ERROR_INVALID_IMAGE);
 		return data.get(0);
 	}
-
 }
