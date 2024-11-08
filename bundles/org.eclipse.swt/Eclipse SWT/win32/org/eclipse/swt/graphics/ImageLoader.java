@@ -234,14 +234,19 @@ public ImageData[] load(String filename) {
 				int newHeight = (int) (originalHeight * scalingFactor);
 
 				BufferedImage image = new BufferedImage(newWidth, newHeight, TYPE_INT_ARGB);
-				Graphics2D g = image.createGraphics();
-				g.setRenderingHints(RENDERING_HINTS);
 
+			    Graphics2D g = image.createGraphics();
+				g.setRenderingHints(RENDERING_HINTS);
 				AffineTransform transform = AffineTransform.getScaleInstance(scalingFactor, scalingFactor);
 				g.setTransform(transform);
-
 				svgDocument.render(null, g);
 				g.dispose();
+
+//				BufferedImage gray = new BufferedImage(image.getWidth(), image.getHeight(), TYPE_INT_ARGB);
+//                ColorConvertOp op = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
+//                op.filter(image, gray);
+//                image = gray;
+
 				String outputFilePath = "D:\\dev\\oomph\\Bachelor\\IconStore\\test-png\\" + localSVGPath.substring(localSVGPath.lastIndexOf("\\"));
 				outputFilePath = outputFilePath.replace(".svg", ".png");
 				File testOutputFile = new File(outputFilePath);
