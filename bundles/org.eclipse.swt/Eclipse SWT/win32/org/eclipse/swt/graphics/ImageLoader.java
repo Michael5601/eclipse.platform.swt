@@ -14,24 +14,14 @@
 package org.eclipse.swt.graphics;
 
 
-import static java.awt.RenderingHints.*;
-
-import java.awt.*;
-import java.awt.geom.*;
 import java.awt.image.*;
 import java.io.*;
 import java.util.*;
-import java.util.List;
 
 import javax.imageio.*;
 
 import org.eclipse.swt.*;
-import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.image.*;
-
-import com.github.weisj.jsvg.*;
-import com.github.weisj.jsvg.geometry.size.*;
-import com.github.weisj.jsvg.parser.*;
 
 /**
  * Instances of this class are used to load images from,
@@ -123,14 +113,6 @@ public class ImageLoader {
 	 */
 	List<ImageLoaderListener> imageLoaderListeners;
 
-
-	private final static Map<Object, Object> RENDERING_HINTS = Map.of(KEY_ANTIALIASING, VALUE_ANTIALIAS_ON,
-			KEY_ALPHA_INTERPOLATION, VALUE_ALPHA_INTERPOLATION_QUALITY, KEY_COLOR_RENDERING,
-			VALUE_COLOR_RENDER_QUALITY, KEY_DITHERING, VALUE_DITHER_DISABLE, KEY_FRACTIONALMETRICS,
-			VALUE_FRACTIONALMETRICS_ON, KEY_INTERPOLATION, VALUE_INTERPOLATION_BICUBIC, KEY_RENDERING,
-			VALUE_RENDER_QUALITY, KEY_STROKE_CONTROL, VALUE_STROKE_PURE, KEY_TEXT_ANTIALIASING,
-			VALUE_TEXT_ANTIALIAS_ON);
-
 /**
  * Construct a new empty ImageLoader.
  */
@@ -179,32 +161,16 @@ public ImageData[] load(InputStream stream) {
 		SWT.error(SWT.ERROR_IO, e);
 	}
     try {
-        int zoom = DPIUtil.getNativeDeviceZoom();
-        SVGLoader loader = new SVGLoader();
-        SVGDocument svgDocument = null;
-        if (isSVGFile(bytes)) {
-            svgDocument = loader.load(new ByteArrayInputStream(bytes), null, LoaderContext.createDefault());
-        }
-        if (svgDocument != null) {
-            double scalingFactor = zoom / 100.0;
-            FloatSize size = svgDocument.size();
-            double originalWidth = size.getWidth();
-            double originalHeight = size.getHeight();
-            int newWidth = (int) (originalWidth * scalingFactor);
-            int newHeight = (int) (originalHeight * scalingFactor);
-            BufferedImage image = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = image.createGraphics();
-            g.setRenderingHints(RENDERING_HINTS);
-            AffineTransform transform = AffineTransform.getScaleInstance(scalingFactor, scalingFactor);
-            g.setTransform(transform);
-            svgDocument.render(null, g);
-            g.dispose();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(image, "png", baos);
-            try (InputStream in = new ByteArrayInputStream(baos.toByteArray())) {
-                return FileFormat.load(in, this);
-            }
-        }
+    	BufferedImage image = SVGRasterizer.rasterizeSVG(bytes);
+    	if(image != null) {
+    		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        	    ImageIO.write(image, "png", baos);
+        	    try (InputStream in = new ByteArrayInputStream(baos.toByteArray())) {
+        	    	data = FileFormat.load(in, this);
+        		    return data;
+        	    }
+        	}
+    	}
     } catch (IOException e) {
         // try standard method
     }
@@ -213,23 +179,7 @@ public ImageData[] load(InputStream stream) {
     } catch (IOException e) {
     	SWT.error(SWT.ERROR_IO, e);
     }
-    return data;
-}
-
-private boolean isSVGFile(byte[] bytes) {
-	    try (BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(bytes)))) {
-	        String line;
-	        int linesToCheck = 10;
-	        while ((line = reader.readLine()) != null && linesToCheck-- > 0) {
-	            line = line.trim();
-	            if (line.contains("<svg")) {
-	                return true;
-	            }
-	        }
-	    } catch (Exception e) {
-	        //ignore.
-	    }
-	    return false;
+	return data;
 }
 
 /**

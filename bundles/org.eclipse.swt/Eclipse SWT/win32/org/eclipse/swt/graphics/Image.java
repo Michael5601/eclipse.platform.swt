@@ -543,14 +543,10 @@ public Image (Device device, String filename) {
 	if (filename == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	initialNativeZoom = DPIUtil.getNativeDeviceZoom();
 	ImageData data = null;
-	//TODO bessere Lösung finden
-	if(filename.endsWith(".svg")) {
-		this.dataAtBaseZoom = new ElementAtZoom<>(new ImageData (filename), 100);
-		data = new ElementAtZoom<>(new ImageData (filename), 125).element();
-	} else {
-		this.dataAtBaseZoom = new ElementAtZoom<>(new ImageData (filename), 100);
-		data = DPIUtil.autoScaleUp(device, this.dataAtBaseZoom);
-	}
+	//TODO Dieser Kontruktor wird nur verwendet, wenn andere Konstruktoren kein Image erzeugen konnten.
+	//Somit ist es fine, dass hier hardcoded zoom=100 übergeben und dann skaliert wird.
+	this.dataAtBaseZoom = new ElementAtZoom<>(new ImageData (filename), 100);
+	data = DPIUtil.autoScaleUp(device, this.dataAtBaseZoom);
 	init(data, getZoom());
 	init();
 	this.device.registerResourceWithZoomSupport(this);
@@ -602,6 +598,7 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
 		//try standard method
 	}
 	if (fileName.zoom() == getZoom()) {
+		//TODO An dieser Stelle muss man vielleicht noch ein if einbauen in der finalen Impl, weil sonst initNative aufgerufen wird und ich denke nicht dass es dann funktioniert.
 		long handle = initNative (fileName.element(), getZoom());
 		if (handle == 0) {
 			init(new ImageData (fileName.element()), getZoom());
@@ -645,7 +642,7 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
  * </ul>
  * @since 3.104
  */
-//TODO SVG-Case einführen
+//TODO Ist abgedeckt durch Implementierung in URLImageDataProvider
 public Image(Device device, ImageDataProvider imageDataProvider) {
 	super(device);
 	this.imageDataProvider = imageDataProvider;
@@ -817,7 +814,6 @@ private ImageData applyGrayImageData(ImageData data, int pHeight, int pWidth) {
  *
  * @noreference This method is not intended to be referenced by clients.
  */
-//TODO Scaling muss für SVG deaktiviert werden.
 public static Long win32_getHandle (Image image, int zoom) {
 	if(image.isDisposed()) {
 		return image.handle;
@@ -830,6 +826,7 @@ public static Long win32_getHandle (Image image, int zoom) {
 		ElementAtZoom<String> imageCandidate = DPIUtil.validateAndGetImagePathAtZoom (image.imageFileNameProvider, zoom);
 		ImageData imageData = new ImageData (imageCandidate.element());
 		if (imageCandidate.zoom() == zoom) {
+			//TODO Scaling ist kein Problem, aber initNative ist wahrscheinlich ein Problem.
 			/* Release current native resources */
 			long handle = image.initNative(imageCandidate.element(), zoom);
 			if (handle == 0) image.init(imageData, zoom);
@@ -1461,7 +1458,6 @@ public ImageData getImageData() {
  *
  * @since 3.106
  */
-//TODO SVG-Case einführen. Möglicherweise zoomed scaleImageData nicht, wenn ImageData schon richtig ist, aber es kommt auf den eingegebenen Zoom an.
 public ImageData getImageData (int zoom) {
 	if (isDisposed()) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	int currentZoom = getZoom();
