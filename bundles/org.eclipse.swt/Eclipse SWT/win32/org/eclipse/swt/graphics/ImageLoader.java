@@ -153,6 +153,14 @@ void reset() {
  */
 public ImageData[] load(InputStream stream) {
     if (stream == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+    return load(stream, false);
+}
+
+/**
+ * @since 3.128
+ */
+public ImageData[] load(InputStream stream, boolean shouldDisable) {
+    if (stream == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
     reset();
     byte[] bytes = null;
 	try {
@@ -161,7 +169,7 @@ public ImageData[] load(InputStream stream) {
 		SWT.error(SWT.ERROR_IO, e);
 	}
     try {
-    	BufferedImage image = SVGRasterizer.rasterizeSVG(bytes);
+    	BufferedImage image = SVGRasterizer.rasterizeSVG(bytes, shouldDisable);
     	if(image != null) {
     		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
         	    ImageIO.write(image, "png", baos);
@@ -204,23 +212,29 @@ public ImageData[] load(String filename) {
 	if (filename == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	try {
 		String localSVGPath = "";
+		String newPathEnding = "eclipse.platform.images\\\\org.eclipse.images\\\\eclipse-svg";
+		boolean shouldDisable = false;
 		if(filename.contains("eclipse.platform.ui\\bundles")) {
-			localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.platform.ui\\bundles", "Bachelor\\IconStore\\original-svg");
+			localSVGPath = filename.replaceFirst("eclipse.platform.ui\\\\bundles", newPathEnding);
 		} else if (filename.contains("eclipse.jdt.ui")) {
-			localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.jdt.ui", "Bachelor\\IconStore\\original-svg");
+			localSVGPath = filename.replaceFirst("eclipse.jdt.ui", newPathEnding);
 		} else if (filename.contains("eclipse.platform\\debug")) {
-			localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.platform\\debug", "Bachelor\\IconStore\\original-svg");
+			localSVGPath = filename.replaceFirst("eclipse.platform\\\\debug", newPathEnding);
 		} else if (filename.contains("eclipse.jdt.debug")) {
-			localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.jdt.debug", "Bachelor\\IconStore\\original-svg");
+			localSVGPath = filename.replaceFirst("eclipse.jdt.debug", newPathEnding);
 		} else if (filename.contains("eclipse.platform\\ua")) {
-			localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.platform\\ua", "Bachelor\\IconStore\\original-svg");
+			localSVGPath = filename.replaceFirst("eclipse.platform\\\\ua", newPathEnding);
 		} else if (filename.contains("eclipse.platform\\platform")) {
-			localSVGPath = filename.replace("SWT-JDT-Platform\\git\\eclipse.platform\\platform", "Bachelor\\IconStore\\original-svg");
+			localSVGPath = filename.replaceFirst("eclipse.platform\\\\platform", newPathEnding);
 		} else {
 			localSVGPath = filename.replace("SWT-JDT-Platform\\git\\", "Bachelor\\IconStore\\original-svg");
 		}
+		if(localSVGPath.contains("dtool") || localSVGPath.contains("dview") || localSVGPath.contains("dlcl")) {
+			shouldDisable = true;
+			localSVGPath = localSVGPath.replace("dtool", "etool").replace("dview", "eview").replace("dlcl", "elcl");
+		}
 		try (InputStream stream = new FileInputStream(localSVGPath)) {
-			return load(stream);
+			return load(stream, shouldDisable);
 		} catch (IOException e) {
 			SWT.error(SWT.ERROR_IO, e);
 		}
