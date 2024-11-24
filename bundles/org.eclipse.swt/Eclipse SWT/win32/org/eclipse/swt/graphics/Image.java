@@ -587,16 +587,16 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
 	initialNativeZoom = DPIUtil.getNativeDeviceZoom();
 	ElementAtZoom<String> fileName = DPIUtil.validateAndGetImagePathAtZoom (imageFileNameProvider, getZoom());
 	String svgFileName = fileName.element().replace(".png", ".svg").replace("@2x", "");
-	try {
-		if (svgFileName.endsWith(".svg")) {
-			init(new ImageData (svgFileName), getZoom());
-			init();
-			this.device.registerResourceWithZoomSupport(this);
-			return;
-		}
-	} catch (SWTException e) {
-		//try standard method
-	}
+//	try {
+//		if (svgFileName.endsWith(".svg")) {
+//			init(new ImageData (svgFileName), getZoom());
+//			init();
+//			this.device.registerResourceWithZoomSupport(this);
+//			return;
+//		}
+//	} catch (SWTException e) {
+//		//try standard method
+//	}
 	if (fileName.zoom() == getZoom()) {
 		//TODO An dieser Stelle muss man vielleicht noch ein if einbauen in der finalen Impl, weil sonst initNative aufgerufen wird und ich denke nicht dass es dann funktioniert.
 		long handle = initNative (fileName.element(), getZoom());
