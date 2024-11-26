@@ -40,21 +40,9 @@ public class SVGRasterizer {
 				FloatSize size = svgDocument.size();
 				double originalWidth = size.getWidth();
 				double originalHeight = size.getHeight();
-				int newWidth;
-				int newHeight;
-				double scaledWidth = originalWidth * scalingFactor;
-				double scaledHeight = originalHeight * scalingFactor;
-				if (scaledWidth - Math.floor(scaledWidth) >= 0.5) {
-					newWidth = (int) Math.ceil(originalWidth * scalingFactor);
-				} else {
-					newWidth = (int) Math.floor(originalWidth * scalingFactor);
-				}
-				if (scaledHeight - Math.floor(scaledHeight) >= 0.5) {
-					newHeight = (int) Math.ceil(originalHeight * scalingFactor);
-				} else {
-					newHeight = (int) Math.floor(originalHeight * scalingFactor);
-				}
-				BufferedImage image = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+				int scaledWidth = (int) Math.round(originalWidth * scalingFactor);
+				int scaledHeight = (int) Math.round(originalHeight * scalingFactor);
+				BufferedImage image = new BufferedImage(scaledWidth, scaledHeight, BufferedImage.TYPE_INT_ARGB);
 				Graphics2D g = image.createGraphics();
 				g.setRenderingHints(RENDERING_HINTS);
 				g.scale(scalingFactor, scalingFactor);
