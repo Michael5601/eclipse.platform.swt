@@ -152,42 +152,34 @@ void reset() {
  * </ul>
  */
 public ImageData[] load(InputStream stream) {
-    if (stream == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-    return load(stream, false);
-}
-
-/**
- * @since 3.128
- */
-public ImageData[] load(InputStream stream, boolean shouldDisable) {
-    if (stream == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-    reset();
-    byte[] bytes = null;
-	try {
-		bytes = stream.readAllBytes();
-	} catch (IOException e) {
-		SWT.error(SWT.ERROR_IO, e);
-	}
-    try {
-    	BufferedImage image = SVGRasterizer.rasterizeSVG(bytes, shouldDisable);
-    	if(image != null) {
-    		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-        	    ImageIO.write(image, "png", baos);
-        	    try (InputStream in = new ByteArrayInputStream(baos.toByteArray())) {
-        	    	data = FileFormat.load(in, this);
-        		    return data;
-        	    }
-        	}
-    	}
-    } catch (IOException e) {
-        // try standard method
-    }
-    try (InputStream fallbackStream = new ByteArrayInputStream(bytes)) {
-        data = FileFormat.load(fallbackStream, this);
-    } catch (IOException e) {
-    	SWT.error(SWT.ERROR_IO, e);
-    }
-	return data;
+	 if (stream == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+	    reset();
+	    byte[] bytes = null;
+		try {
+			bytes = stream.readAllBytes();
+		} catch (IOException e) {
+			SWT.error(SWT.ERROR_IO, e);
+		}
+	    try {
+	    	BufferedImage image = SVGRasterizer.rasterizeSVG(bytes);
+	    	if(image != null) {
+	    		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+	        	    ImageIO.write(image, "png", baos);
+	        	    try (InputStream in = new ByteArrayInputStream(baos.toByteArray())) {
+	        	    	data = FileFormat.load(in, this);
+	        		    return data;
+	        	    }
+	        	}
+	    	}
+	    } catch (IOException e) {
+	        // try standard method
+	    }
+	    try (InputStream fallbackStream = new ByteArrayInputStream(bytes)) {
+	        data = FileFormat.load(fallbackStream, this);
+	    } catch (IOException e) {
+	    	SWT.error(SWT.ERROR_IO, e);
+	    }
+		return data;
 }
 
 /**
