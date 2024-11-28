@@ -586,17 +586,6 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
 	this.imageFileNameProvider = imageFileNameProvider;
 	initialNativeZoom = DPIUtil.getNativeDeviceZoom();
 	ElementAtZoom<String> fileName = DPIUtil.validateAndGetImagePathAtZoom (imageFileNameProvider, getZoom());
-	String svgFileName = fileName.element().replace(".png", ".svg").replace("@2x", "");
-	try {
-		if (svgFileName.endsWith(".svg")) {
-			init(new ImageData (svgFileName, getZoom()), getZoom());
-			init();
-			this.device.registerResourceWithZoomSupport(this);
-			return;
-		}
-	} catch (SWTException e) {
-		//try standard method
-	}
 	if (fileName.zoom() == getZoom()) {
 		long handle = initNative (fileName.element(), getZoom());
 		if (handle == 0) {
@@ -605,6 +594,7 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
 			setHandleForZoomLevel(handle, getZoom());
 		}
 	} else {
+//		String svgFileName = fileName.element().replace(".png", ".svg").replace("@2x", "");
 		ImageData resizedData = DPIUtil.autoScaleImageData (device, new ImageData (fileName.element(), getZoom()), fileName.zoom());
 		init(resizedData, getZoom());
 	}
