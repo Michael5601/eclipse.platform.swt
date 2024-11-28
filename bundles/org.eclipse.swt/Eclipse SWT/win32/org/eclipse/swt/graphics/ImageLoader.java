@@ -160,20 +160,23 @@ public ImageData[] load(InputStream stream) {
 	} catch (IOException e) {
 		SWT.error(SWT.ERROR_IO, e);
 	}
-    try {
-    	BufferedImage image = SVGRasterizer.rasterizeSVG(bytes);
-    	if(image != null) {
-    		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-        	    ImageIO.write(image, "png", baos);
-        	    try (InputStream in = new ByteArrayInputStream(baos.toByteArray())) {
-        	    	data = FileFormat.load(in, this);
-        		    return data;
-        	    }
-        	}
-    	}
-    } catch (IOException e) {
-        // try standard method
-    }
+	ISVGRasterizer rasterizer = SVGRasterizerServiceLoader.getRasterizer();
+	if (rasterizer != null) {
+	    try {
+	    	BufferedImage image = rasterizer.rasterizeSVG(bytes);
+	    	if(image != null) {
+	    		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+	        	    ImageIO.write(image, "png", baos);
+	        	    try (InputStream in = new ByteArrayInputStream(baos.toByteArray())) {
+	        	    	data = FileFormat.load(in, this);
+	        		    return data;
+	        	    }
+	        	}
+	    	}
+	    } catch (IOException e) {
+	        // try standard method
+	    }
+	}
     try (InputStream fallbackStream = new ByteArrayInputStream(bytes)) {
         data = FileFormat.load(fallbackStream, this);
     } catch (IOException e) {
