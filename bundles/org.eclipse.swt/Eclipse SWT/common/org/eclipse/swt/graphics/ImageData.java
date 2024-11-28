@@ -331,7 +331,14 @@ public ImageData(int width, int height, int depth, PaletteData palette, int scan
  * @see ImageLoader#load(InputStream)
  */
 public ImageData(InputStream stream) {
-	ImageData[] data = ImageDataLoader.load(stream);
+	this(stream, 0);
+}
+
+/**
+ * @since 3.128
+ */
+public ImageData(InputStream stream, int zoom) {
+	ImageData[] data = ImageDataLoader.load(stream, zoom);
 	if (data.length < 1) SWT.error(SWT.ERROR_INVALID_IMAGE);
 	ImageData i = data[0];
 	setAllFields(
@@ -377,7 +384,14 @@ public ImageData(InputStream stream) {
  * </ul>
  */
 public ImageData(String filename) {
-	ImageData[] data = ImageDataLoader.load(filename);
+	this(filename, 0);
+}
+
+/**
+ * @since 3.128
+ */
+public ImageData(String filename, int zoom) {
+	ImageData[] data = ImageDataLoader.load(filename, zoom);
 	if (data.length < 1) SWT.error(SWT.ERROR_INVALID_IMAGE);
 	ImageData i = data[0];
 	setAllFields(

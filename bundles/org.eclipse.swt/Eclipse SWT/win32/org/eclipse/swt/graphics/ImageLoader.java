@@ -152,6 +152,13 @@ void reset() {
  * </ul>
  */
 public ImageData[] load(InputStream stream) {
+	return load(stream, 0);
+}
+
+/**
+ * @since 3.128
+ */
+public ImageData[] load(InputStream stream, int zoom) {
 	if (stream == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
     reset();
     byte[] bytes = null;
@@ -161,9 +168,9 @@ public ImageData[] load(InputStream stream) {
 		SWT.error(SWT.ERROR_IO, e);
 	}
 	ISVGRasterizer rasterizer = SVGRasterizerServiceLoader.getRasterizer();
-	if (rasterizer != null) {
+	if (rasterizer != null && zoom != 0) {
 	    try {
-	    	BufferedImage image = rasterizer.rasterizeSVG(bytes);
+	    	BufferedImage image = rasterizer.rasterizeSVG(bytes, zoom);
 	    	if(image != null) {
 	    		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 	        	    ImageIO.write(image, "png", baos);
@@ -204,6 +211,12 @@ public ImageData[] load(InputStream stream) {
  * </ul>
  */
 public ImageData[] load(String filename) {
+	return load(filename, 0);
+}
+/**
+ * @since 3.128
+ */
+public ImageData[] load(String filename, int zoom) {
 	if (filename == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	try {
 		String localSVGPath = "";
@@ -224,7 +237,7 @@ public ImageData[] load(String filename) {
 			localSVGPath = filename.replace("SWT-JDT-Platform\\git\\", "Bachelor\\IconStore\\original-svg");
 		}
 		try (InputStream stream = new FileInputStream(localSVGPath)) {
-			return load(stream);
+			return load(stream, zoom);
 		} catch (IOException e) {
 			SWT.error(SWT.ERROR_IO, e);
 		}
@@ -233,7 +246,7 @@ public ImageData[] load(String filename) {
 	}
 	filename = filename.replace(".svg", ".png");
 	try (InputStream stream = new FileInputStream(filename)) {
-		return load(stream);
+		return load(stream, zoom);
 	} catch (IOException e) {
 		SWT.error(SWT.ERROR_IO, e);
 	}

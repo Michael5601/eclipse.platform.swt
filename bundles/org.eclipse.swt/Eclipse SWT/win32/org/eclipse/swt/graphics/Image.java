@@ -499,7 +499,7 @@ public Image(Device device, ImageData source, ImageData mask) {
 public Image (Device device, InputStream stream) {
 	super(device);
 	initialNativeZoom = DPIUtil.getNativeDeviceZoom();
-	this.dataAtBaseZoom =  new ElementAtZoom<>(new ImageData (stream), 100);
+	this.dataAtBaseZoom =  new ElementAtZoom<>(new ImageData (stream, 100), 100);
 	ImageData data = DPIUtil.autoScaleUp(device, this.dataAtBaseZoom);
 	init(data, getZoom());
 	init();
@@ -545,7 +545,7 @@ public Image (Device device, String filename) {
 	ImageData data = null;
 	//TODO Dieser Kontruktor wird nur verwendet, wenn andere Konstruktoren kein Image erzeugen konnten.
 	//Somit ist es fine, dass hier hardcoded zoom=100 übergeben und dann skaliert wird.
-	this.dataAtBaseZoom = new ElementAtZoom<>(new ImageData (filename), 100);
+	this.dataAtBaseZoom = new ElementAtZoom<>(new ImageData (filename, 100), 100);
 	data = DPIUtil.autoScaleUp(device, this.dataAtBaseZoom);
 	init(data, getZoom());
 	init();
@@ -589,7 +589,7 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
 	String svgFileName = fileName.element().replace(".png", ".svg").replace("@2x", "");
 	try {
 		if (svgFileName.endsWith(".svg")) {
-			init(new ImageData (svgFileName), getZoom());
+			init(new ImageData (svgFileName, getZoom()), getZoom());
 			init();
 			this.device.registerResourceWithZoomSupport(this);
 			return;
@@ -598,15 +598,14 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
 		//try standard method
 	}
 	if (fileName.zoom() == getZoom()) {
-		//TODO An dieser Stelle muss man vielleicht noch ein if einbauen in der finalen Impl, weil sonst initNative aufgerufen wird und ich denke nicht dass es dann funktioniert.
 		long handle = initNative (fileName.element(), getZoom());
 		if (handle == 0) {
-			init(new ImageData (fileName.element()), getZoom());
+			init(new ImageData (fileName.element(), getZoom()), getZoom());
 		} else {
 			setHandleForZoomLevel(handle, getZoom());
 		}
 	} else {
-		ImageData resizedData = DPIUtil.autoScaleImageData (device, new ImageData (fileName.element()), fileName.zoom());
+		ImageData resizedData = DPIUtil.autoScaleImageData (device, new ImageData (fileName.element(), getZoom()), fileName.zoom());
 		init(resizedData, getZoom());
 	}
 	init();
