@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SvgPlugin
+Bundle-SymbolicName: org.eclipse.swt.svg
+Bundle-Version: 1.0.0.qualifier
+Automatic-Module-Name: org.eclipse.swt.svgPlugin
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Export-Package: org.eclipse.swt.svg
+Import-Package: org.eclipse.swt.graphics
+Bundle-Activator: org.eclipse.swt.svg.SVGRasterizerPluginActivator
+Require-Capability: osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"
+Provide-Capability: osgi.serviceloader;osgi.serviceloader=org.eclipse.swt.graphics.ISVGRasterizer
+Require-Bundle: org.eclipse.osgi;bundle-version="3.22.0"
+Bundle-ClassPath: ., libs/jsvg-1.6.1.jar
