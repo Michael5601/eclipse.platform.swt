@@ -6,9 +6,22 @@ import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
 import java.util.*;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import org.eclipse.swt.graphics.ISVGRasterizer;
 import org.eclipse.swt.graphics.SVGRasterizerRegistry;
 import org.eclipse.swt.graphics.SVGUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import com.github.weisj.jsvg.*;
 import com.github.weisj.jsvg.geometry.size.*;
@@ -48,26 +61,135 @@ public class SVGRasterizer implements ISVGRasterizer {
 		if(svgLoader == null) {
 			svgLoader = new SVGLoader();
 		}
-		SVGDocument svgDocument = null;
 		if (SVGUtil.isSVGFile(bytes)) {
 			try (InputStream stream = new ByteArrayInputStream(bytes)) {
-				svgDocument = svgLoader.load(stream, null, LoaderContext.createDefault());
-			}
-			if (svgDocument != null) {
-				FloatSize size = svgDocument.size();
-				double originalWidth = size.getWidth();
-				double originalHeight = size.getHeight();
-				int scaledWidth = (int) Math.round(originalWidth * scalingFactor);
-				int scaledHeight = (int) Math.round(originalHeight * scalingFactor);
-				BufferedImage image = new BufferedImage(scaledWidth, scaledHeight, BufferedImage.TYPE_INT_ARGB);
-				Graphics2D g = image.createGraphics();
-				g.setRenderingHints(RENDERING_HINTS);
-				g.scale(scalingFactor, scalingFactor);
-				svgDocument.render(null, g);
-				g.dispose();
-				return image;
+				return rasterize(stream, scalingFactor);
 			}
 		}
 		return null;
+	}
+
+	private BufferedImage rasterize(InputStream stream, float scalingFactor) throws IOException {
+		SVGDocument svgDocument = null;
+		svgDocument = svgLoader.load(stream, null, LoaderContext.createDefault());
+		if (svgDocument != null) {
+			FloatSize size = svgDocument.size();
+			double originalWidth = size.getWidth();
+			double originalHeight = size.getHeight();
+			int scaledWidth = (int) Math.round(originalWidth * scalingFactor);
+			int scaledHeight = (int) Math.round(originalHeight * scalingFactor);
+			BufferedImage image = new BufferedImage(scaledWidth, scaledHeight, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D g = image.createGraphics();
+			g.setRenderingHints(RENDERING_HINTS);
+			g.scale(scalingFactor, scalingFactor);
+			svgDocument.render(null, g);
+			g.dispose();
+			return image;
+		}
+		return null;
+	}
+	
+	@Override
+	public BufferedImage rasterizeDisabledSVG(byte[] bytes, float scalingFactor) throws IOException {
+		if(svgLoader == null) {
+			svgLoader = new SVGLoader();
+		}
+		if (SVGUtil.isSVGFile(bytes)) {
+			try (InputStream stream = new ByteArrayInputStream(bytes)) {
+				InputStream disabledStream = applyDisabledLook(stream);
+				return rasterize(disabledStream, scalingFactor);
+			}
+		}
+		return null;
+	}
+	
+	@Override
+	public BufferedImage rasterizeGraySVG(byte[] bytes, float scalingFactor) throws IOException {
+		if(svgLoader == null) {
+			svgLoader = new SVGLoader();
+		}
+		if (SVGUtil.isSVGFile(bytes)) {
+			try (InputStream stream = new ByteArrayInputStream(bytes)) {
+				InputStream disabledStream = applyGrayLook(stream);
+				return rasterize(disabledStream, scalingFactor);
+			}
+		}
+		return null;
+	}
+	
+	private static InputStream applyDisabledLook(InputStream svgInputStream) throws IOException {
+		Document svgDocument = parseSVG(svgInputStream);
+		addDisabledFilter(svgDocument);
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+			writeSVG(svgDocument, outputStream);
+			return new ByteArrayInputStream(outputStream.toByteArray());
+		}
+	}
+	
+	private static InputStream applyGrayLook(InputStream svgInputStream) throws IOException {
+		Document svgDocument = parseSVG(svgInputStream);
+		addGrayFilter(svgDocument);
+		try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+			writeSVG(svgDocument, outputStream);
+			return new ByteArrayInputStream(outputStream.toByteArray());
+		}
+	}
+
+	private static Document parseSVG(InputStream inputStream) throws IOException {
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder builder;
+		try {
+			builder = factory.newDocumentBuilder();
+			return builder.parse(inputStream);
+		} catch (SAXException | IOException | ParserConfigurationException e) {
+			throw new IOException(e.getMessage());
+		}
+	}
+
+	private static void addDisabledFilter(Document document) {
+		addFilter(document, 0.64f, 0.4f);
+	}
+	
+	private static void addGrayFilter(Document document) {
+		addFilter(document, 0.64f, 0.1f);
+	}
+
+	private static void addFilter(Document document, float slope, float intercept) {
+		Element defs = (Element) document.getElementsByTagName("defs").item(0);
+		if (defs == null) {
+			defs = document.createElement("defs");
+			document.getDocumentElement().appendChild(defs);
+		}
+
+		Element filter = document.createElement("filter");
+		filter.setAttribute("id", "customizedLook");
+
+		Element colorMatrix = document.createElement("feColorMatrix");
+		colorMatrix.setAttribute("type", "saturate");
+		colorMatrix.setAttribute("values", "0");
+		filter.appendChild(colorMatrix);
+
+		Element componentTransfer = document.createElement("feComponentTransfer");
+		for (String channel : new String[] { "R", "G", "B" }) {
+			Element func = document.createElement("feFunc" + channel);
+			func.setAttribute("type", "linear");
+			func.setAttribute("slope", Float.toString(slope));
+			func.setAttribute("intercept", Float.toString(intercept));
+			componentTransfer.appendChild(func);
+		}
+		filter.appendChild(componentTransfer);
+		defs.appendChild(filter);
+		document.getDocumentElement().setAttribute("filter", "url(#customizedLook)");
+	}
+
+	private static void writeSVG(Document document, OutputStream outputStream) throws IOException {
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer;
+		try {
+			transformer = transformerFactory.newTransformer();
+			transformer.transform(new DOMSource(document), new StreamResult(outputStream));
+		} catch (TransformerException e) {
+			throw new IOException(e.getMessage());
+		}
 	}
 }

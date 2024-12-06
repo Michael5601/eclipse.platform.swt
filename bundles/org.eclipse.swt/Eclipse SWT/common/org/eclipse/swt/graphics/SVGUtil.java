@@ -6,7 +6,7 @@ import java.nio.charset.*;
 /**
  * Utility class for handling SVG-related operations.
  *
- * @since 3.129
+ * @since 4.0
  */
 public class SVGUtil {
 
