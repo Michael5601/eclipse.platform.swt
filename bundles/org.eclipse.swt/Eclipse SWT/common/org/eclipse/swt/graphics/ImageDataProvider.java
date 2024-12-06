@@ -43,4 +43,11 @@ public interface ImageDataProvider {
 	 */
 	ImageData getImageData (int zoom);
 
+	/**
+	* @since 4.0
+	*/
+	default ImageData getImageData(int zoom, int flag) {
+		return getImageData(zoom);
+	}
+
 }

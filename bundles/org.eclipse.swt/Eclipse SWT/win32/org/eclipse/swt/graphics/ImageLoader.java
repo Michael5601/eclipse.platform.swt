@@ -152,7 +152,7 @@ void reset() {
  * </ul>
  */
 public ImageData[] load(InputStream stream) {
-	return load(stream, 0);
+	return load(stream, 0, 0);
 }
 
 /**
@@ -176,9 +176,9 @@ public ImageData[] load(InputStream stream) {
  *    <li>ERROR_UNSUPPORTED_FORMAT - if the image stream contains an unrecognized format</li>
  * </ul>
  *
- * @since 3.129
+ * @since 4.0
  */
-public ImageData[] load(InputStream stream, int zoom) {
+public ImageData[] load(InputStream stream, int zoom, int flag) {
 	if (stream == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
     reset();
     byte[] bytes = null;
@@ -190,10 +190,16 @@ public ImageData[] load(InputStream stream, int zoom) {
 	ISVGRasterizer rasterizer = SVGRasterizerRegistry.getRasterizer();
 	if (rasterizer != null && zoom != 0) {
 	    try {
-	    	BufferedImage image = rasterizer.rasterizeSVG(bytes, zoom);
+	    	BufferedImage image = rasterizer.rasterizeSVG(bytes, zoom, flag);
 	    	if(image != null) {
 	    		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 	        	    ImageIO.write(image, "png", baos);
+
+	        	    File outputDir = new File("D:\\dev\\oomph\\Bachelor\\IconStore\\test-png");
+                    String uniqueName = "icon_" + System.nanoTime() + ".png";
+                    File outputFile = new File(outputDir, uniqueName);
+                    ImageIO.write(image, "png", outputFile);
+
 	        	    try (InputStream in = new ByteArrayInputStream(baos.toByteArray())) {
 	        	    	data = FileFormat.load(in, this);
 	        		    return data;
@@ -231,7 +237,7 @@ public ImageData[] load(InputStream stream, int zoom) {
  * </ul>
  */
 public ImageData[] load(String filename) {
-	return load(filename, 0);
+	return load(filename, 0, 0);
 }
 /**
  * Loads an array of <code>ImageData</code> objects from the
@@ -254,12 +260,12 @@ public ImageData[] load(String filename) {
  *    <li>ERROR_UNSUPPORTED_FORMAT - if the image file contains an unrecognized format</li>
  * </ul>
  *
- * @since 3.129
+ * @since 4.0
  */
-public ImageData[] load(String filename, int zoom) {
+public ImageData[] load(String filename, int zoom, int flag) {
 	if (filename == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	try (InputStream stream = new FileInputStream(filename)) {
-		return load(stream, zoom);
+		return load(stream, zoom, flag);
 	} catch (IOException e) {
 		SWT.error(SWT.ERROR_IO, e);
 	}

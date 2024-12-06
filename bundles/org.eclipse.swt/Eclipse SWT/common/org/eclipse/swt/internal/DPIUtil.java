@@ -537,10 +537,14 @@ public record ElementAtZoom<T>(T element, int zoom) {
  * error is thrown.
  */
 public static ElementAtZoom<ImageData> validateAndGetImageDataAtZoom(ImageDataProvider provider, int zoom) {
+	return validateAndGetImageDataAtZoom(provider, zoom, 0);
+}
+
+public static ElementAtZoom<ImageData> validateAndGetImageDataAtZoom(ImageDataProvider provider, int zoom, int flag) {
 	if (provider == null) {
 		SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	}
-	ElementAtZoom<ImageData> imageDataAtZoom = getElementAtZoom(z -> provider.getImageData(z), zoom);
+	ElementAtZoom<ImageData> imageDataAtZoom = getElementAtZoom(z -> provider.getImageData(z, flag), zoom);
 	if (imageDataAtZoom == null) {
 		SWT.error(SWT.ERROR_INVALID_ARGUMENT, null,
 				": ImageDataProvider [" + provider + "] returns null ImageData at 100% zoom.");
