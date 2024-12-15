@@ -202,38 +202,41 @@ public ImageData[] load(InputStream stream) {
  */
 public ImageData[] load(String filename) {
 	if (filename == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-//	try {
-//		String localSVGPath = "";
-//		String newPathEnding = "eclipse.platform.images\\\\org.eclipse.images\\\\eclipse-svg";
-//		boolean shouldDisable = false;
-//		if(filename.contains("eclipse.platform.ui\\bundles")) {
-//			localSVGPath = filename.replaceFirst("eclipse.platform.ui\\\\bundles", newPathEnding);
-//		} else if (filename.contains("eclipse.jdt.ui")) {
-//			localSVGPath = filename.replaceFirst("eclipse.jdt.ui", newPathEnding);
-//		} else if (filename.contains("eclipse.platform\\debug")) {
-//			localSVGPath = filename.replaceFirst("eclipse.platform\\\\debug", newPathEnding);
-//		} else if (filename.contains("eclipse.jdt.debug")) {
-//			localSVGPath = filename.replaceFirst("eclipse.jdt.debug", newPathEnding);
-//		} else if (filename.contains("eclipse.platform\\ua")) {
-//			localSVGPath = filename.replaceFirst("eclipse.platform\\\\ua", newPathEnding);
-//		} else if (filename.contains("eclipse.platform\\platform")) {
-//			localSVGPath = filename.replaceFirst("eclipse.platform\\\\platform", newPathEnding);
-//		} else {
-//			localSVGPath = filename.replace("SWT-JDT-Platform\\git\\", "Bachelor\\IconStore\\original-svg");
-//		}
-//		if(localSVGPath.contains("dtool") || localSVGPath.contains("dview") || localSVGPath.contains("dlcl")) {
-//			shouldDisable = true;
-//			localSVGPath = localSVGPath.replace("dtool", "etool").replace("dview", "eview").replace("dlcl", "elcl");
-//		}
-//		try (InputStream stream = new FileInputStream(localSVGPath)) {
-//			return load(stream, shouldDisable);
-//		} catch (IOException e) {
-//			SWT.error(SWT.ERROR_IO, e);
-//		}
-//	} catch (SWTException e) {
-//		// try standard method
-//	}
-//	filename = filename.replace(".svg", ".png");
+	try {
+		String localSVGPath = "";
+		String newPathEnding = "eclipse.platform.images\\\\org.eclipse.images\\\\eclipse-svg";
+		if(filename.contains("eclipse.platform.ui\\bundles")) {
+			localSVGPath = filename.replaceFirst("eclipse.platform.ui\\\\bundles", newPathEnding);
+		} else if (filename.contains("eclipse.jdt.ui")) {
+			localSVGPath = filename.replaceFirst("eclipse.jdt.ui", newPathEnding);
+		} else if (filename.contains("eclipse.platform\\debug")) {
+			localSVGPath = filename.replaceFirst("eclipse.platform\\\\debug", newPathEnding);
+		} else if (filename.contains("eclipse.jdt.debug")) {
+			localSVGPath = filename.replaceFirst("eclipse.jdt.debug", newPathEnding);
+		} else if (filename.contains("eclipse.platform\\ua")) {
+			localSVGPath = filename.replaceFirst("eclipse.platform\\\\ua", newPathEnding);
+		} else if (filename.contains("eclipse.platform\\platform")) {
+			localSVGPath = filename.replaceFirst("eclipse.platform\\\\platform", newPathEnding);
+		} else {
+			localSVGPath = filename.replace("SWT-JDT-Platform\\git\\", "Bachelor\\IconStore\\original-svg");
+		}
+		if(localSVGPath.contains("dtool") || localSVGPath.contains("dview") || localSVGPath.contains("dlcl")) {
+			filename = filename.replace(".svg", ".png");
+			try (InputStream stream = new FileInputStream(filename)) {
+				return load(stream);
+			} catch (IOException e) {
+				SWT.error(SWT.ERROR_IO, e);
+			}
+		}
+		try (InputStream stream = new FileInputStream(localSVGPath)) {
+			return load(stream);
+		} catch (IOException e) {
+			SWT.error(SWT.ERROR_IO, e);
+		}
+	} catch (SWTException e) {
+		// try standard method
+	}
+	filename = filename.replace(".svg", ".png");
 	try (InputStream stream = new FileInputStream(filename)) {
 		return load(stream);
 	} catch (IOException e) {
