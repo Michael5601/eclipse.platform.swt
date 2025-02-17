@@ -19,8 +19,9 @@ import java.util.zip.*;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
 
-public final class PNGFileFormat extends FileFormat {
+public final class PNGFileFormat extends StaticImageFileFormat {
 	static final int SIGNATURE_LENGTH = 8;
 	static final int PRIME = 65521;
 	PngIhdrChunk headerChunk;
@@ -152,7 +153,7 @@ void unloadIntoByteStream(ImageLoader loader) {
 	encoder.encode(outputStream);
 }
 @Override
-boolean isFileFormat(LEDataInputStream stream) {
+boolean isFileFormat(LEDataInputStream stream) throws IOException {
 	try {
 		byte[] signature = new byte[SIGNATURE_LENGTH];
 		stream.read(signature);

@@ -14,17 +14,19 @@
 package org.eclipse.swt.internal.image;
 
 
-import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
 import java.io.*;
 
-public final class OS2BMPFileFormat extends FileFormat {
+import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
+
+public final class OS2BMPFileFormat extends StaticImageFileFormat {
 	static final int BMPFileHeaderSize = 14;
 	static final int BMPHeaderFixedSize = 12;
 	int width, height, bitCount;
 
 @Override
-boolean isFileFormat(LEDataInputStream stream) {
+boolean isFileFormat(LEDataInputStream stream) throws IOException {
 	try {
 		byte[] header = new byte[18];
 		stream.read(header);

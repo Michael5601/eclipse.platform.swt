@@ -18,8 +18,9 @@ import java.io.*;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
 
-public final class WinICOFileFormat extends FileFormat {
+public final class WinICOFileFormat extends StaticImageFileFormat {
 
 byte[] bitInvertData(byte[] data, int startIndex, int endIndex) {
 	// Destructively bit invert data in the given byte array.
@@ -55,15 +56,11 @@ int iconSize(ImageData i) {
 	return WinBMPFileFormat.BMPHeaderFixedSize + paletteSize + dataSize;
 }
 @Override
-boolean isFileFormat(LEDataInputStream stream) {
-	try {
-		byte[] header = new byte[4];
-		stream.read(header);
-		stream.unread(header);
-		return header[0] == 0 && header[1] == 0 && header[2] == 1 && header[3] == 0;
-	} catch (Exception e) {
-		return false;
-	}
+boolean isFileFormat(LEDataInputStream stream) throws IOException {
+	byte[] header = new byte[4];
+	stream.read(header);
+	stream.unread(header);
+	return header[0] == 0 && header[1] == 0 && header[2] == 1 && header[3] == 0;
 }
 boolean isValidIcon(ImageData i) {
 	switch (i.depth) {
@@ -131,10 +128,10 @@ ImageData[] loadFromByteStream() {
  */
 ImageData loadIcon(int[] iconHeader) {
 	try {
-		FileFormat png = new PNGFileFormat();
+		StaticImageFileFormat png = new PNGFileFormat();
 		if (png.isFileFormat(inputStream)) {
 			png.loader = this.loader;
-			return png.loadFromStream(inputStream)[0];
+			return png.loadFromStream(inputStream, DEFAULT_ZOOM)[0];
 		}
 	} catch (Exception e) {
 	}

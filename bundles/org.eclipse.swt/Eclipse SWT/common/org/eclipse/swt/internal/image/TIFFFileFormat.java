@@ -14,18 +14,20 @@
 package org.eclipse.swt.internal.image;
 
 
+import java.io.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import java.io.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
 
 /**
  * Baseline TIFF decoder revision 6.0
  * Extension T4-encoding CCITT T.4 1D
  */
-public final class TIFFFileFormat extends FileFormat {
+public final class TIFFFileFormat extends StaticImageFileFormat {
 
 @Override
-boolean isFileFormat(LEDataInputStream stream) {
+boolean isFileFormat(LEDataInputStream stream) throws IOException {
 	try {
 		byte[] header = new byte[4];
 		stream.read(header);

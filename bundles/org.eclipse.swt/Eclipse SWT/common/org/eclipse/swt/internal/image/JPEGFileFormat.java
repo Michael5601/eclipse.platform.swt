@@ -18,11 +18,13 @@
 package org.eclipse.swt.internal.image;
 
 
-import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
 import java.io.*;
 
-public final class JPEGFileFormat extends FileFormat {
+import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
+
+public final class JPEGFileFormat extends StaticImageFileFormat {
 	int restartInterval;
 	JPEGFrameHeader frameHeader;
 	int imageWidth, imageHeight;
@@ -1363,7 +1365,7 @@ void inverseDCT(int[] dataUnit) {
 	}
 }
 @Override
-boolean isFileFormat(LEDataInputStream stream) {
+boolean isFileFormat(LEDataInputStream stream) throws IOException {
 	try {
 		JPEGStartOfImage soi = new JPEGStartOfImage(stream);
 		stream.unread(soi.reference);

@@ -14,11 +14,13 @@
 package org.eclipse.swt.internal.image;
 
 
-import org.eclipse.swt.*;
-import org.eclipse.swt.graphics.*;
 import java.io.*;
 
-public final class WinBMPFileFormat extends FileFormat {
+import org.eclipse.swt.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
+
+public final class WinBMPFileFormat extends StaticImageFileFormat {
 	static final int BMPFileHeaderSize = 14;
 	static final int BMPHeaderFixedSize = 40;
 
@@ -416,7 +418,7 @@ int decompressRLE8Data(byte[] src, int numBytes, int stride, byte[] dest, int de
 	return 1;
 }
 @Override
-boolean isFileFormat(LEDataInputStream stream) {
+boolean isFileFormat(LEDataInputStream stream) throws IOException {
 	try {
 		byte[] header = new byte[18];
 		stream.read(header);
