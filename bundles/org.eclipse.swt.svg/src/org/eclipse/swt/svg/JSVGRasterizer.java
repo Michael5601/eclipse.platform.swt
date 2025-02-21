@@ -51,8 +51,7 @@ public class JSVGRasterizer implements SVGRasterizer {
 
 	@Override
 	public ImageData[] rasterizeSVG(InputStream stream, int zoom) throws IOException {
-		SVGDocument svgDocument = null;
-		svgDocument = SVG_LOADER.load(stream, null, LoaderContext.createDefault());
+		SVGDocument svgDocument = SVG_LOADER.load(stream, null, LoaderContext.createDefault());
 		if (svgDocument != null) {
 			float scalingFactor = zoom / 100.0f;
 			FloatSize size = svgDocument.size();

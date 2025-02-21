@@ -559,7 +559,7 @@ public Image(Device device, ImageFileNameProvider imageFileNameProvider) {
 			init(new ImageData (fileName.element(), getZoom()), getZoom());
 		}
 	} else {
-		ImageData resizedData = DPIUtil.autoScaleImageData (device, new ImageData (fileName.element(), getZoom()), fileName.zoom());
+		ImageData resizedData = DPIUtil.autoScaleImageData (device, new ImageData (fileName.element()), fileName.zoom());
 		init(resizedData, getZoom());
 	}
 	init();
