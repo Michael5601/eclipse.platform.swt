@@ -283,7 +283,7 @@ public static ImageData scaleImageData (Device device, final ImageData imageData
 
 
 public static ImageData scaleImageData (Device device, final ElementAtZoom<ImageData> elementAtZoom, int targetZoom) {
-	return scaleImageData(device, elementAtZoom.element(), targetZoom, elementAtZoom.zoom());
+	return scaleImageData(device, elementAtZoom.element(), targetZoom, elementAtZoom.sourceZoom());
 }
 
 private static ImageData autoScaleImageData (Device device, final ImageData imageData, float scaleFactor) {
@@ -347,7 +347,7 @@ public static ImageData autoScaleUp (Device device, final ImageData imageData) {
 }
 
 public static ImageData autoScaleUp (Device device, final ElementAtZoom<ImageData> elementAtZoom) {
-	return autoScaleImageData(device, elementAtZoom.element(), elementAtZoom.zoom());
+	return autoScaleImageData(device, elementAtZoom.element(), elementAtZoom.sourceZoom());
 }
 
 public static int[] autoScaleUp(int[] pointArray) {
@@ -520,7 +520,7 @@ public static int mapZoomToDPI (int zoom) {
  *
  * @param <T> type of the element to be presented, e.g., {@link ImageData}
  */
-public record ElementAtZoom<T>(T element, int zoom) {
+public record ElementAtZoom<T>(T element, int sourceZoom, int targetZoom) {
 }
 
 /**
@@ -566,28 +566,42 @@ public static ElementAtZoom<String> validateAndGetImagePathAtZoom(ImageFileNameP
 private static <T> ElementAtZoom<T> getElementAtZoom(Function<Integer, T> elementForZoomProvider, int zoom) {
 	T dataAtOriginalZoom = elementForZoomProvider.apply(zoom);
 	if (dataAtOriginalZoom != null) {
-		return new ElementAtZoom<>(dataAtOriginalZoom, zoom);
+		return new ElementAtZoom<>(dataAtOriginalZoom, zoom, calculateTargetZoom(dataAtOriginalZoom, zoom));
 	}
 	if (zoom > 100 && zoom <= 150) {
 		T dataAt150Percent = elementForZoomProvider.apply(150);
 		if (dataAt150Percent != null) {
-			return new ElementAtZoom<>(dataAt150Percent, 150);
+			return new ElementAtZoom<>(dataAt150Percent, 150, 100);
 		}
 	}
 	if (zoom > 100) {
 		T dataAt200Percent = elementForZoomProvider.apply(200);
 		if (dataAt200Percent != null) {
-			return new ElementAtZoom<>(dataAt200Percent, 200);
+			return new ElementAtZoom<>(dataAt200Percent, 200, 100);
 		}
 	}
 	if (zoom != 100) {
 		T dataAt100Percent = elementForZoomProvider.apply(100);
 		if (dataAt100Percent != null) {
-			return new ElementAtZoom<>(dataAt100Percent, 100);
+			return new ElementAtZoom<>(dataAt100Percent, 100, 100);
 		}
 	}
 	return null;
 }
+
+private static <T> int calculateTargetZoom(T dataAtOriginalZoom, int zoom) {
+	if(dataAtOriginalZoom instanceof String imagePath) {
+		if(imagePath.endsWith(".svg")) {
+			return zoom;
+		} else {
+			return 100;
+		}
+	} else {
+		//is ignored
+		return zoom;
+	}
+}
+
 
 public static int getNativeDeviceZoom() {
 	return nativeDeviceZoom;
