@@ -189,7 +189,7 @@ public ImageData[] load(InputStream stream) {
 public ImageData[] load(InputStream stream, int zoom) {
 	if (stream == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
     reset();
-    data = FileFormat.load(stream, zoom, this);
+    data = FileFormat.load(stream, this, zoom);
     return data;
 }
 
