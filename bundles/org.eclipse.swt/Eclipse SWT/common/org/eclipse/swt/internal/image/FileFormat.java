@@ -76,6 +76,11 @@ public abstract class FileFormat {
 		}
 	}
 
+	static abstract class DynamicImageFileFormat extends FileFormat {
+		@Override
+		abstract ImageData[] loadFromByteStream(int zoom);
+	}
+
 	LEDataInputStream inputStream;
 	LEDataOutputStream outputStream;
 	ImageLoader loader;

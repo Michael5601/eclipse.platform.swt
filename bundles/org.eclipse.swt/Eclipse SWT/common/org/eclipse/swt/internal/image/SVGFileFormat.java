@@ -18,8 +18,9 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.image.FileFormat.*;
 
-public class SVGFileFormat extends FileFormat {
+public class SVGFileFormat extends DynamicImageFileFormat {
 
 	/** The instance of the registered {@link SVGRasterizer}. */
 	private static final SVGRasterizer RASTERIZER = ServiceLoader.load(SVGRasterizer.class).findFirst().orElse(null);
@@ -49,5 +50,4 @@ public class SVGFileFormat extends FileFormat {
 	void unloadIntoByteStream(ImageLoader loader) {
 		throw new UnsupportedOperationException();
 	}
-
 }
