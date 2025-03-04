@@ -20,10 +20,12 @@ import java.nio.file.Path;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.ElementAtZoom;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageDataProvider;
 import org.eclipse.swt.graphics.ImageFileNameProvider;
+import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.widgets.Display;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +41,8 @@ public class Test_org_eclipse_swt_internal_SVGRasterizer {
 
 	ImageDataProvider imageDataProvider = zoom -> {
 		String fileName = "collapseall.svg";
-		return new ImageData(getPath(fileName), zoom);
+		ElementAtZoom<ImageData> imageData = new ImageLoader().load(getPath(fileName), 100, 100).get(0);
+		return imageData.element();
 	};
 
 	@Before
@@ -90,7 +93,8 @@ public class Test_org_eclipse_swt_internal_SVGRasterizer {
 		// Corrupt Image provider
 		ImageDataProvider provider = zoom -> {
 			String fileName = "corrupt.svg";
-			return new ImageData(getPath(fileName), zoom);
+			ElementAtZoom<ImageData> imageData = new ImageLoader().load(getPath(fileName), 100, 100).get(0);
+			return imageData.element();
 		};
 		try {
 			image = new Image(display, provider);

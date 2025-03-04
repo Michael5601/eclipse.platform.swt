@@ -20,7 +20,6 @@ import java.util.function.*;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import org.eclipse.swt.internal.DPIUtil.*;
 
 /**
  * Abstract factory class for loading/unloading images from files or streams

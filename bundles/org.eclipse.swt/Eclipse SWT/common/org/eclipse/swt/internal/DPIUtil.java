@@ -512,14 +512,6 @@ public static int mapZoomToDPI (int zoom) {
 }
 
 /**
- * Represents an element, such as some image data, at a specific zoom level.
- *
- * @param <T> type of the element to be presented, e.g., {@link ImageData}
- */
-public record ElementAtZoom<T>(T element, int zoom) {
-}
-
-/**
  * Gets ImageData that are appropriate for the specified zoom level together
  * with the zoom level at which the image data are. If there is an image at the
  * specified zoom level, it is returned. Otherwise the next larger image at 150%

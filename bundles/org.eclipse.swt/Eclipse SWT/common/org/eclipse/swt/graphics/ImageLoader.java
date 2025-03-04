@@ -153,7 +153,10 @@ public ImageData[] load(InputStream stream) {
 	return data;
 }
 
-List<ElementAtZoom<ImageData>> load(InputStream stream, int fileZoom, int targetZoom) {
+/**
+ * @since 3.130
+ */
+public List<ElementAtZoom<ImageData>> load(InputStream stream, int fileZoom, int targetZoom) {
 	if (stream == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	reset();
 	List<ElementAtZoom<ImageData>> images = InternalImageLoader.load(stream, this, fileZoom, targetZoom);
@@ -184,7 +187,10 @@ public ImageData[] load(String filename) {
 	return data;
 }
 
-List<ElementAtZoom<ImageData>> load(String filename, int fileZoom, int targetZoom) {
+/**
+ * @since 3.130
+ */
+public List<ElementAtZoom<ImageData>> load(String filename, int fileZoom, int targetZoom) {
 	if (filename == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 	try (InputStream stream = new FileInputStream(filename)) {
 		return load(stream, fileZoom, targetZoom);
