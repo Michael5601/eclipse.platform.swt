@@ -1132,22 +1132,29 @@ private class DrawScalingImageToImageOperation extends Operation {
 
 private void drawImage(Image image, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
 		int destWidth, int destHeight, int imageZoom, int scaledImageZoom) {
-	Rectangle src = Win32DPIUtils.pointToPixel(drawable, new Rectangle(srcX, srcY, srcWidth, srcHeight), scaledImageZoom);
-	Rectangle dest = Win32DPIUtils.pointToPixel(drawable, new Rectangle(destX, destY, destWidth, destHeight), imageZoom);
-	if (scaledImageZoom != 100) {
-		/*
-		 * This is a HACK! Due to rounding errors at fractional scale factors,
-		 * the coordinates may be slightly off. The workaround is to restrict
-		 * coordinates to the allowed bounds.
-		 */
-		Rectangle b = image.getBounds(scaledImageZoom);
-		int errX = src.x + src.width - b.width;
-		int errY = src.y + src.height - b.height;
-		if (errX != 0 || errY != 0) {
-			if (errX <= scaledImageZoom / 100 && errY <= scaledImageZoom / 100) {
-				src.intersect(b);
-			} else {
-				SWT.error (SWT.ERROR_INVALID_ARGUMENT);
+	Rectangle src;
+	Rectangle dest;
+	if (image.createdWithTargetSize()) {
+		dest = new Rectangle(destX, destY, destWidth, destHeight);
+		src = dest;
+	} else {
+		src = Win32DPIUtils.pointToPixel(drawable, new Rectangle(srcX, srcY, srcWidth, srcHeight), scaledImageZoom);
+		dest = Win32DPIUtils.pointToPixel(drawable, new Rectangle(destX, destY, destWidth, destHeight), imageZoom);
+		if (scaledImageZoom != 100) {
+			/*
+			 * This is a HACK! Due to rounding errors at fractional scale factors,
+			 * the coordinates may be slightly off. The workaround is to restrict
+			 * coordinates to the allowed bounds.
+			 */
+			Rectangle b = image.getBounds(scaledImageZoom);
+			int errX = src.x + src.width - b.width;
+			int errY = src.y + src.height - b.height;
+			if (errX != 0 || errY != 0) {
+				if (errX <= scaledImageZoom / 100 && errY <= scaledImageZoom / 100) {
+					src.intersect(b);
+				} else {
+					SWT.error (SWT.ERROR_INVALID_ARGUMENT);
+				}
 			}
 		}
 	}
@@ -1231,15 +1238,35 @@ private void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int src
 		}
 		return;
 	}
-	long imageHandle = Image.win32_getHandle(srcImage, imageZoom);
-	switch (srcImage.type) {
-		case SWT.BITMAP:
-			drawBitmap(srcImage, imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-			break;
-		case SWT.ICON:
-			drawIcon(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
-			break;
+	if (srcImage.createdWithTargetSize()) {
+		drawWithTempHandle(srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+	} else {
+		long imageHandle = Image.win32_getHandle(srcImage, imageZoom);
+		switch (srcImage.type) {
+			case SWT.BITMAP:
+				drawBitmap(srcImage, imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight,
+						simple);
+				break;
+			case SWT.ICON:
+				drawIcon(imageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+				break;
+		}
 	}
+}
+
+private void drawWithTempHandle(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY,
+		int destWidth, int destHeight, boolean simple) {
+	srcImage.executeOnImageHandleAtSize(tempImageHandle -> {
+		switch (srcImage.type) {
+			case SWT.BITMAP:
+				drawBitmap(srcImage, tempImageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight,
+						simple);
+				break;
+			case SWT.ICON:
+				drawIcon(tempImageHandle, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple);
+				break;
+			}
+	}, destWidth, destHeight);
 }
 
 private void drawIcon(long imageHandle, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {

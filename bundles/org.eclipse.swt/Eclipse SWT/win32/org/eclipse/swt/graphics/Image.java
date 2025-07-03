@@ -20,6 +20,7 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.*;
 import java.util.function.*;
+import java.util.stream.*;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
@@ -27,6 +28,7 @@ import org.eclipse.swt.internal.DPIUtil.*;
 import org.eclipse.swt.internal.gdip.*;
 import org.eclipse.swt.internal.image.*;
 import org.eclipse.swt.internal.win32.*;
+import org.eclipse.swt.widgets.*;
 
 /**
  * Instances of this class are graphics which have been prepared
@@ -809,6 +811,25 @@ public static long win32_getHandle (Image image, int zoom) {
 	return image.getImageMetadata(zoom).handle;
 }
 
+void executeOnImageHandleAtSize(Consumer<Long> drawFunction, int targetWidth, int targetHeight) {
+	ImageData imageData = this.imageProvider.newImageData(targetWidth, targetHeight);
+	HandleForImageDataContainer handleContainer = init(device, imageData);
+	long tempHandle = handleContainer.handles()[0];
+	drawFunction.accept(tempHandle);
+	if (handleContainer.type == SWT.ICON) {
+		OS.DestroyIcon (tempHandle);
+	} else {
+		OS.DeleteObject (tempHandle);
+	}
+}
+
+/**
+ * @since 3.131
+ */
+public boolean createdWithTargetSize() {
+	return this.imageProvider.isSizeAware();
+}
+
 /**
  * <b>IMPORTANT:</b> This method is not part of the public
  * API for Image. It is marked public only so that it
@@ -825,8 +846,17 @@ public static long win32_getHandle (Image image, int zoom) {
  * @noreference This method is not intended to be referenced by clients.
  */
 public static void drawScaled(GC gc, Image original, int width, int height, float scaleFactor) {
+	int targetWidth = Math.round(width * scaleFactor);
+	int targetHeight = Math.round(height * scaleFactor);
+	drawAtTargetSize(gc, original, width, height, targetWidth, targetHeight);
+}
+
+/**
+ * @since 3.131
+ */
+public static void drawAtTargetSize(GC gc, Image original, int width, int height, int targetWidth, int targetHeight) {
 	gc.drawImage (original, 0, 0, width, height,
-			0, 0, Math.round (width * scaleFactor), Math.round (height * scaleFactor), false);
+			0, 0, targetWidth, targetHeight, false);
 }
 
 long [] createGdipImage(Integer zoom) {
@@ -1222,7 +1252,6 @@ public ImageData getImageData (int zoom) {
 	}
 	return this.imageProvider.newImageData(zoom);
 }
-
 
 /**
  * Returns an <code>ImageData</code> based on the receiver.
@@ -1868,7 +1897,34 @@ public static Image win32_new(Device device, int type, long handle, int nativeZo
 	return new Image(device, type, handle, nativeZoom);
 }
 
+@FunctionalInterface
+interface ElementAtSizeFunction<T> {
+    Optional<T> getForSize(int width, int height);
+}
+
+private <T> Optional<T> getElementAtTargetSize(ElementAtSizeFunction<T> elementForSizeProvider, int targetWidth,
+		int targetHeight) {
+	Optional<T> dataAtOriginalSize = elementForSizeProvider.getForSize(targetWidth, targetHeight);
+	if (dataAtOriginalSize.isPresent()) {
+		T data = dataAtOriginalSize.get();
+		if (data instanceof String fileName) {
+			ImageData imageData = ImageDataLoader.loadByTargetSize(fileName, targetWidth, targetHeight);
+			if (imageData.width == targetWidth && imageData.height == targetHeight) {
+				return dataAtOriginalSize;
+			}
+		} else if (data instanceof ImageData)
+			return dataAtOriginalSize;
+	}
+	return Optional.empty();
+}
+
 private abstract class AbstractImageProviderWrapper {
+
+	protected boolean sizeAware = false;
+
+	public boolean isSizeAware (){
+		return this.sizeAware;
+	}
 
 	protected abstract Rectangle getBounds(int zoom);
 
@@ -1881,6 +1937,38 @@ private abstract class AbstractImageProviderWrapper {
 	}
 
 	abstract ImageData newImageData(int zoom);
+
+	final ImageData newImageData(int targetWidth, int targetHeight) {
+		ImageData imageData = loadImageData(targetWidth, targetHeight);
+		imageData = adaptImageDataIfDisabledOrGray(imageData);
+		return DPIUtil.autoScaleImageData(device, imageData, targetWidth, targetHeight);
+	};
+
+	protected ImageData loadImageData(int targetWidth, int targetHeight) {
+		ImageData imageData;
+		Rectangle bounds = getBounds(100);
+		int imageZoomForWidth = Math.round(1f * targetWidth / bounds.width);
+		int imageZoomForHeight = Math.round(1f * targetHeight / bounds.height);
+		int imageZoom = Math.max(imageZoomForWidth, imageZoomForHeight);
+		if (getAllCurrentMonitorZooms().contains(imageZoom)) {
+			return newImageData(imageZoom);
+		}
+		if (imageZoom > 150) {
+			imageData = newImageData(200);
+		} else {
+			imageData = newImageData(100);
+		}
+		return imageData;
+	};
+
+	private Collection<Integer> getAllCurrentMonitorZooms() {
+		if (device instanceof Display display) {
+			return Arrays.stream(display.getMonitors())
+				.map(Monitor::getZoom)
+				.collect(Collectors.toSet());
+		}
+		return Collections.emptySet();
+	}
 
 	abstract AbstractImageProviderWrapper createCopy(Image image);
 
@@ -1984,7 +2072,6 @@ private abstract class ImageFromImageDataProviderWrapper extends AbstractImagePr
 		imageData = adaptImageDataIfDisabledOrGray(imageData);
 		return newImageHandle(imageData, zoom);
 	}
-
 }
 
 private class PlainImageDataProviderWrapper extends ImageFromImageDataProviderWrapper {
@@ -2068,7 +2155,7 @@ private class ImageDataLoaderStreamProviderWrapper extends ImageFromImageDataPro
 
 	@Override
 	protected ElementAtZoom<ImageData> loadImageData(int zoom) {
-		return ImageDataLoader.load(new ByteArrayInputStream(inputStreamData), FileFormat.DEFAULT_ZOOM, zoom);
+		return ImageDataLoader.loadByZoom(new ByteArrayInputStream(inputStreamData), FileFormat.DEFAULT_ZOOM, zoom);
 	}
 
 	@Override
@@ -2237,7 +2324,6 @@ private abstract class BaseImageProviderWrapper<T> extends DynamicImageProviderW
 		return cachedImageData.computeIfAbsent(zoom, imageDataRetrival);
 	}
 
-
 	@Override
 	protected ImageHandle newImageHandle(int zoom) {
 		ImageData cachedData = cachedImageData.remove(zoom);
@@ -2266,6 +2352,9 @@ private abstract class BaseImageProviderWrapper<T> extends DynamicImageProviderW
 private class ImageFileNameProviderWrapper extends BaseImageProviderWrapper<ImageFileNameProvider> {
 	ImageFileNameProviderWrapper(ImageFileNameProvider provider) {
 		super(provider, ImageFileNameProvider.class);
+		if (provider instanceof ImageFileNameAtSizeProvider) {
+			this.sizeAware = true;
+		}
 		// Checks for the contract of the passed provider require
 		// checking for valid image data creation
 		newImageData(DPIUtil.getDeviceZoom());
@@ -2277,7 +2366,7 @@ private class ImageFileNameProviderWrapper extends BaseImageProviderWrapper<Imag
 
 		// Load at appropriate zoom via loader
 		if (fileForZoom.zoom() != zoom && ImageDataLoader.canLoadAtZoom(fileForZoom.element(), fileForZoom.zoom(), zoom)) {
-			ElementAtZoom<ImageData> imageDataAtZoom = ImageDataLoader.load(fileForZoom.element(), fileForZoom.zoom(), zoom);
+			ElementAtZoom<ImageData> imageDataAtZoom = ImageDataLoader.loadByZoom(fileForZoom.element(), fileForZoom.zoom(), zoom);
 			return new ElementAtZoom<>(imageDataAtZoom.element(), zoom);
 		}
 
@@ -2290,12 +2379,41 @@ private class ImageFileNameProviderWrapper extends BaseImageProviderWrapper<Imag
 		}
 		ElementAtZoom<ImageData> imageDataAtZoom;
 		if (nativeInitializedImage == null) {
-			imageDataAtZoom = ImageDataLoader.load(fileForZoom.element(), fileForZoom.zoom(), zoom);
+			imageDataAtZoom = ImageDataLoader.loadByZoom(fileForZoom.element(), fileForZoom.zoom(), zoom);
 		} else {
 			imageDataAtZoom = new ElementAtZoom<>(nativeInitializedImage.getImageData(), fileForZoom.zoom());
 			nativeInitializedImage.destroy();
 		}
 		return imageDataAtZoom;
+	}
+
+	@Override
+	protected ImageData loadImageData(int targetWidth, int targetHeight) {
+		Optional<String> fileForTargetSize = validateAndGetImagePathAtTargetSize(provider, targetWidth, targetHeight);
+		if(fileForTargetSize.isPresent()) {
+			ImageData imageDataAtZoom = ImageDataLoader.loadByTargetSize(fileForTargetSize.get(), targetWidth, targetWidth);
+			return imageDataAtZoom;
+		}
+		return null;
+	}
+
+	private Optional<String> validateAndGetImagePathAtTargetSize(ImageFileNameProvider provider, int targetWidth, int targetHeight) {
+		if (provider == null) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
+		if (provider instanceof ImageFileNameAtSizeProvider sizeAwareProvider) {
+			Optional<String> imagePathAtTargetSize = getElementAtTargetSize(sizeAwareProvider::getImagePath,
+					targetWidth, targetHeight);
+			if (!imagePathAtTargetSize.isEmpty()) {
+				return imagePathAtTargetSize;
+			}
+		}
+		Rectangle originalSize = getBounds(100);
+		int imageZoomForWidth = Math.round(1f * targetWidth / originalSize.width);
+		int imageZoomForHeight = Math.round(1f * targetHeight / originalSize.height);
+		int imageZoom = Math.max(imageZoomForWidth, imageZoomForHeight);
+		String imagePath = DPIUtil.validateAndGetImagePathAtZoom(provider, imageZoom).element();
+		return Optional.of(imagePath);
 	}
 
 	@Override
@@ -2505,11 +2623,33 @@ private class ImageFileNameProviderWrapper extends BaseImageProviderWrapper<Imag
 private class ImageDataProviderWrapper extends BaseImageProviderWrapper<ImageDataProvider> {
 	ImageDataProviderWrapper(ImageDataProvider provider) {
 		super(provider, ImageDataProvider.class);
+		// Checks for the contract of the passed provider require
+		// checking for valid image data creation
+		if (provider instanceof ImageDataAtSizeProvider) {
+			this.sizeAware = true;
+		}
 	}
 
 	@Override
 	protected ElementAtZoom<ImageData> loadImageData(int zoom) {
 		return DPIUtil.validateAndGetImageDataAtZoom (provider, zoom);
+	}
+
+	@Override
+	protected ImageData loadImageData(int targetWidth, int targetHeight) {
+		return validateAndGetImageDataAtTargetSize(targetWidth, targetHeight).get();
+	}
+
+	private Optional<ImageData> validateAndGetImageDataAtTargetSize(int targetWidth, int targetHeight) {
+		if (provider == null) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
+		Optional<ImageData> imageDataAtTargetSize = getElementAtTargetSize((x, z) -> ((ImageDataAtSizeProvider) provider).getImageData(x, z), targetWidth, targetHeight);
+		if (imageDataAtTargetSize == null) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT, null,
+					": ImageDataProvider [" + provider + "] returns null ImageData at 100% zoom.");
+		}
+		return imageDataAtTargetSize;
 	}
 
 	@Override

@@ -144,34 +144,49 @@ public static ImageData scaleImageData (Device device, final ElementAtZoom<Image
 	return scaleImageData(device, elementAtZoom.element(), targetZoom, elementAtZoom.zoom());
 }
 
-public static ImageData autoScaleImageData (Device device, final ImageData imageData, float scaleFactor) {
-	// Guards are already implemented in callers: if (deviceZoom == 100 || imageData == null || scaleFactor == 1.0f) return imageData;
-	int width = imageData.width;
-	int height = imageData.height;
-	int scaledWidth = Math.round (width * scaleFactor);
-	int scaledHeight = Math.round (height * scaleFactor);
+public static ImageData autoScaleImageData(Device device, final ImageData imageData, float scaleFactor) {
+	int targetWidth = Math.round(imageData.width * scaleFactor);
+	int targetHeight = Math.round(imageData.height * scaleFactor);
+	return scaleImage(device, imageData, imageData.width, imageData.height, targetWidth, targetHeight, Image::drawAtTargetSize);
+}
+
+public static ImageData autoScaleImageData(Device device, final ImageData imageData, int targetWidth, int targetHeight) {
+	return scaleImage(device, imageData, imageData.width, imageData.height, targetWidth, targetHeight, Image::drawAtTargetSize);
+}
+
+@FunctionalInterface
+private interface ImageDrawFunction {
+	void draw(GC gc, Image original, int originalWidth, int originalHeight, int targetWidth, int targetHeight);
+}
+
+private static ImageData scaleImage(Device device, ImageData imageData, int originalWidth, int originalHeight,
+		int targetWidth, int targetHeight, ImageDrawFunction drawFunction) {
+
 	boolean useSmoothScaling = isSmoothScalingEnabled() && imageData.getTransparencyType() != SWT.TRANSPARENCY_MASK;
+
 	if (useSmoothScaling) {
-		Image original = new Image (device, (ImageDataProvider) zoom -> imageData);
-		ImageGcDrawer drawer =  new ImageGcDrawer() {
+		Image original = new Image(device, (ImageDataProvider) zoom -> imageData);
+
+		ImageGcDrawer drawer = new ImageGcDrawer() {
 			@Override
 			public void drawOn(GC gc, int imageWidth, int imageHeight) {
-				gc.setAntialias (SWT.ON);
-				Image.drawScaled(gc, original, width, height, scaleFactor);
-			};
+				gc.setAntialias(SWT.ON);
+				drawFunction.draw(gc, original, originalWidth, originalHeight, targetWidth, targetHeight);
+			}
 
 			@Override
 			public int getGcStyle() {
 				return SWT.TRANSPARENT;
 			}
 		};
-		Image resultImage = new Image (device, drawer, scaledWidth, scaledHeight);
-		ImageData result = resultImage.getImageData (100);
-		original.dispose ();
-		resultImage.dispose ();
+
+		Image resultImage = new Image(device, drawer, targetWidth, targetHeight);
+		ImageData result = resultImage.getImageData(100);
+		original.dispose();
+		resultImage.dispose();
 		return result;
 	} else {
-		return imageData.scaledTo (scaledWidth, scaledHeight);
+		return imageData.scaledTo(targetWidth, targetHeight);
 	}
 }
 
